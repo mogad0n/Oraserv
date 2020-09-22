@@ -42,7 +42,7 @@ except ImportError:
 class Oraserv(callbacks.Plugin):
     """Suite of tools to interact with oragonoIRCd"""
 
-    @wrap(ip, ['text', optional('something'), optional])
+    @wrap(['nick', optional('something'), optional('something')])
     def nban(self, irc, msg, args, nickname, duration, reason):
         """<nick> <duration> <reason>
 
@@ -54,7 +54,7 @@ class Oraserv(callbacks.Plugin):
         """
         label = ircutils.makeLabel()
         try:
-            hostmask = irc.state.nickToHostmask('nickname')
+            hostmask = irc.state.nickToHostmask(nickname)
             host = hostmask.split("@")[1]
             ih = hostmask.split("!")[1]
         except KeyError:
@@ -62,14 +62,21 @@ class Oraserv(callbacks.Plugin):
                 "No such nick",
                 Raise=True,
             )
-        if host = 'irc.liberta.casa':  # TODO: 22/09 Learn to check if <nick> is regged by implementing dowhois 330
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS', args=('SUSPEND', f'{nickname}'), server_tags={"label": label}))
-            irc.reply(f'Suspending account for {nickname} Note: <duration> and <reason> are currently not applicable here and will be ignored')
-        elif host = '4b4hvj35u73k4.liberta.casa' or host = 'gfvnhk5qj5qaq.liberta.casa' or host = 'fescuzdjai52n.liberta.casa':
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE', args=('ANDKILL', f'{duration or ""} {ih} {reason or ""} '), server_tags={"label": label}))
+        if host == 'irc.liberta.casa':  # 23/09 Implement do330 and same for whoisoperator
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
+                        args=('SUSPEND', nickname), server_tags={"label": label}))
+            irc.reply(f'Suspending account for {nickname} Note: <duration> and'
+                    ' <reason> are currently not applicable here and will be ignored')
+        elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa'
+             or host == 'fescuzdjai52n.liberta.casa':
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
+                         args=('ANDKILL', f'{duration or ""}*!{ih}{reason or ""}'),
+                          server_tags={"label": label}))
             irc.reply(f'Adding a KLINE for discord user: {ih}')
         else:
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE', args=('ANDKILL', f'{duration or ""} {host} {reason or ""} '), server_tags={"label": label}))
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
+                        args=('ANDKILL', f'{duration or ""}*!*@{host}{reason or ""}'),
+                         server_tags={"label": label}))
             irc.reply(f'Adding a KLINE for unregistered user: {host}')
 
 
