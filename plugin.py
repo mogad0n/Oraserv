@@ -67,8 +67,7 @@ class Oraserv(callbacks.Plugin):
                         args=('SUSPEND', nickname), server_tags={"label": label}))
             irc.reply(f'Suspending account for {nickname} Note: <duration> and'
                     ' <reason> are currently not applicable here and will be ignored')
-        elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa'
-             or host == 'fescuzdjai52n.liberta.casa':
+        elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa' or host == 'fescuzdjai52n.liberta.casa':
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
                          args=('ANDKILL', f'{duration or ""}*!{ih}{reason or ""}'),
                           server_tags={"label": label}))
