@@ -43,9 +43,9 @@ banned_dict = {}
 class Oraserv(callbacks.Plugin):
     """Suite of tools to interact with oragonoIRCd"""
 
-    @wrap([optional('something'), 'nick', optional('something')])
-    def nban(self, irc, msg, args, duration, nickname, reason):
-        """<duration> <nick> <reason>
+    @wrap(['nick', optional('something'), optional('something')])
+    def nban(self, irc, msg, args, nick, duration , reason):
+        """<nick> <duration> <reason>
 
         will add a KLINE for the host associated with <nick> and also KILL the connection.
         If <nick> is registered it will suspend the respective account
@@ -55,7 +55,7 @@ class Oraserv(callbacks.Plugin):
         """
         label = ircutils.makeLabel()
         try:
-            hostmask = irc.state.nickToHostmask(nickname)
+            hostmask = irc.state.nickToHostmask(nick)
             host = hostmask.split("@")[1]
             bannable_host = f'*!*@{host}'
             ih = hostmask.split("!")[1]
@@ -65,57 +65,64 @@ class Oraserv(callbacks.Plugin):
                 "No such nick",
                 Raise=True,
             )
-        if host == 'irc.liberta.casa':  # 23/09 Implement do330 and same for whoisoperator
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
-                        args=('SUSPEND', nickname), server_tags={"label": label}))
-            irc.reply(f'Suspending account for {nickname} Note: <duration> and'
-                    ' <reason> are currently not applicable here and will be ignored')
-            banned_dict[nickname] = 'suspended'
-        elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa' or host == 'fescuzdjai52n.liberta.casa':
-            arg = ''
-            if duration:
-                arg += duration + ' '
-            arg += bannable_ih
-            if reason:
-                arg += ' ' + reason
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
-                         args=('ANDKILL', arg),
-                          server_tags={"label": label}))
-            irc.reply(f'Adding a KLINE for discord user: {bannable_ih}')
-            banned_dict[nickname] = bannable_ih
-        else:
-            arg = ''
-            if duration:
-                arg += duration + ' '
-            arg += bannable_host
-            if reason:
-                arg += ' ' + reason
-            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
-                        args=('ANDKILL', arg),
-                         server_tags={"label": label}))
-            irc.reply(f'Adding a KLINE for unregistered user: {bannable_host}')
-            banned_dict[nickname] = bannable_host
 
-    def nunban(self, irc, msg, args, nickname):
+        # Registered Nicks
+        # Implement do330 and RPL_WHOISOPERATOR instead
+        if host == 'irc.liberta.casa':
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
+                        args=('SUSPEND', nick), server_tags={"label": label}))
+            irc.reply(f'Suspending account for {nick} Note: <duration> and'
+                    ' <reason> are currently not applicable here and will be ignored')
+            banned_dict[nick] = 'suspended'
+
+        # Discord Nicks
+        # Workaround for hardcoded host values.
+        elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa' or host == 'fescuzdjai52n.liberta.casa':
+            arg = ['ANDKILL']
+            if duration:
+                arg.append(duration)
+            arg.append(bannable_ih)
+            if reason:
+                arg.append(reason)
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
+                         args=arg, server_tags={"label": label}))
+            irc.reply(f'Adding a KLINE for discord user: {bannable_ih}')
+            banned_dict[nick] = bannable_ih
+
+        # Unregistered Nicks
+        else:
+            arg = ['ANDKILL']
+            if duration:
+                arg.append(duration)
+            arg.append(bannable_host)
+            if reason:
+                arg.append(reason)
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
+                        args=arg, server_tags={"label": label}))
+            irc.reply(f'Adding a KLINE for unregistered user: {bannable_host}')
+            banned_dict[nick] = bannable_host
+
+    def nunban(self, irc, msg, args, nick):
         """<nick>
 
         If found, will unban mask/account associated with <nick>
         """
         label = ircutils.makeLabel()
 
-        if banned_dict[nickname]:
-            if banned_dict[nickname] == 'suspended':
+        # This shouldn't survive restarts so need db?
+        if banned_dict[nick] is None:
+            irc.error(f'There are no bans associated with {nick}')
+        else:
+            if banned_dict[nick] == 'suspended':
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
-                            args=('UNSUSPEND', nickname), server_tags={"label": label}))
-                irc.reply(f'Reversing suspended account {nickname}')
-                banned_dict.pop(nickname)
+                            args=('UNSUSPEND', nick), server_tags={"label": label}))
+                irc.reply(f'Enabling suspended account {nick}')
+                banned_dict.pop(nick)
             else:
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='UNKLINE',
-                            args=(banned_dict[nickname]), server_tags={"label": label}))
-                irc.reply(f'Removing KLINE for {banned_dict[nickname]}')
-                banned_dict.pop(nickname)
-        else:
-            irc.error(f'There are no bans associated with {nickname}')
+                            args=('', banned_dict[nick]), server_tags={"label": label}))
+                irc.reply(f'Removing KLINE for {banned_dict[nick]}')
+                banned_dict.pop(nick)
 
     nunban = wrap(nunban, ['something'])
 
@@ -124,3 +131,4 @@ Class = Oraserv
 
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+
