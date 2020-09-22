@@ -117,7 +117,7 @@ class Oraserv(callbacks.Plugin):
         else:
             irc.error(f'There are no bans associated with {nickname}')
 
-        nunban = wrap(nunban, ['something'])
+    nunban = wrap(nunban, ['something'])
 
 
 Class = Oraserv
