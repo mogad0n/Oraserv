@@ -145,21 +145,19 @@ class Oraserv(callbacks.Plugin):
         """
         label = ircutils.makeLabel()
 
-        # This shouldn't survive restarts so need db?
-        bannedDb = self.db.get(nick, None)
-        if bannedDb is None:
+        if nick not in self.db:
             irc.error(f'There are no bans associated with {nick}')
         else:
-            if bannedDb[nick] == 'suspended':
+            if self.db[nick] == 'suspended':
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
                             args=('UNSUSPEND', nick), server_tags={"label": label}))
                 irc.reply(f'Enabling suspended account {nick}')
-                bannedDb.pop(nick)
+                self.db.pop(nick)
             else:
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='UNKLINE',
-                            args=('', bannedDb[nick]), server_tags={"label": label}))
-                irc.reply(f'Removing KLINE for {banned_dict[nick]}')
-                bannedDb.pop(nick)
+                            args=('', self.db[nick]), server_tags={"label": label}))
+                irc.reply(f'Removing KLINE for {self.db[nick]}')
+                self.db.pop(nick)
 
     nunban = wrap(nunban, ['something'])
 
