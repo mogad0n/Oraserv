@@ -28,7 +28,7 @@
 
 ###
 
-from supybot import utils, plugins, ircutils, callbacks, irclib, ircmsgs
+from supybot import utils, plugins, ircutils, callbacks, irclib, ircmsgs, conf
 from supybot.commands import *
 try:
     from supybot.i18n import PluginInternationalization
@@ -38,14 +38,47 @@ except ImportError:
     # without the i18n module
     _ = lambda x: x
 
-banned_dict = {}
+import pickle
+import sys
+
+filename = conf.supybot.directories.data.dirize("Oraserv.db")
 
 class Oraserv(callbacks.Plugin):
     """Suite of tools to interact with oragonoIRCd"""
 
-    @wrap(['nick', optional('something'), optional('something')])
-    def nban(self, irc, msg, args, nick, duration , reason):
-        """<nick> <duration> <reason>
+    def __init__(self, irc):
+        self.__parent = super(Oraserv, self)
+        self.__parent.__init__(irc)
+        self.db = {}
+        self._loadDb()
+        world.flushers.append(self._flushDb)
+
+    def _loadDb(self):
+        """Loads the (flatfile) database mapping nicks to masks."""
+
+        try:
+            with open(filename, "rb") as f:
+                self.db = pickle.load(f)
+        except Exception as e:
+            self.log.debug("Oraserv: Unable to load pickled database: %s", e)
+
+    def _flushDb(self):
+        """Flushes the (flatfile) database mapping nicks to masks."""
+
+        try:
+            with open(filename, "wb") as f:
+                pickle.dump(self.db, f, 2)
+        except Exception as e:
+            self.log.warning("Oraserv: Unable to write pickled database: %s", e)
+
+    def die(self):
+        self._flushDb()
+        world.flushers.remove(self._flushDb)
+        self.__parent.die()
+
+    @wrap([getopts({'duration': 'something'}), 'nick', optional('something')])
+    def nban(self, irc, msg, args, opts, nick, reason):
+        """[--duration <duration>] <nick> [<reason>]
 
         will add a KLINE for the host associated with <nick> and also KILL the connection.
         If <nick> is registered it will suspend the respective account
@@ -53,6 +86,9 @@ class Oraserv(callbacks.Plugin):
         not adding a <duration> will add a permanent KLINE
         <reason> is optional as well.
         """
+
+        opts = dict(opts)
+
         label = ircutils.makeLabel()
         try:
             hostmask = irc.state.nickToHostmask(nick)
@@ -73,34 +109,34 @@ class Oraserv(callbacks.Plugin):
                         args=('SUSPEND', nick), server_tags={"label": label}))
             irc.reply(f'Suspending account for {nick} Note: <duration> and'
                     ' <reason> are currently not applicable here and will be ignored')
-            banned_dict[nick] = 'suspended'
+            self.db[nick] = 'suspended'
 
         # Discord Nicks
         # Workaround for hardcoded host values.
         elif host == '4b4hvj35u73k4.liberta.casa' or host == 'gfvnhk5qj5qaq.liberta.casa' or host == 'fescuzdjai52n.liberta.casa':
             arg = ['ANDKILL']
-            if duration:
-                arg.append(duration)
+            if 'duration' in opts:
+                arg.append(opts['duration'])
             arg.append(bannable_ih)
             if reason:
                 arg.append(reason)
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
                          args=arg, server_tags={"label": label}))
             irc.reply(f'Adding a KLINE for discord user: {bannable_ih}')
-            banned_dict[nick] = bannable_ih
+            self.db[nick] = bannable_ih
 
         # Unregistered Nicks
         else:
             arg = ['ANDKILL']
-            if duration:
-                arg.append(duration)
+            if 'duration' in opts:
+                arg.append(opts['duration'])
             arg.append(bannable_host)
             if reason:
                 arg.append(reason)
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='KLINE',
                         args=arg, server_tags={"label": label}))
             irc.reply(f'Adding a KLINE for unregistered user: {bannable_host}')
-            banned_dict[nick] = bannable_host
+            self.db[nick] = bannable_host
 
     def nunban(self, irc, msg, args, nick):
         """<nick>
@@ -110,19 +146,20 @@ class Oraserv(callbacks.Plugin):
         label = ircutils.makeLabel()
 
         # This shouldn't survive restarts so need db?
-        if banned_dict[nick] is None:
+        bannedDb = self.db.get(nick, None)
+        if bannedDb is None:
             irc.error(f'There are no bans associated with {nick}')
         else:
-            if banned_dict[nick] == 'suspended':
+            if bannedDb[nick] == 'suspended':
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='NS',
                             args=('UNSUSPEND', nick), server_tags={"label": label}))
                 irc.reply(f'Enabling suspended account {nick}')
-                banned_dict.pop(nick)
+                bannedDb.pop(nick)
             else:
                 irc.queueMsg(msg=ircmsgs.IrcMsg(command='UNKLINE',
-                            args=('', banned_dict[nick]), server_tags={"label": label}))
+                            args=('', bannedDb[nick]), server_tags={"label": label}))
                 irc.reply(f'Removing KLINE for {banned_dict[nick]}')
-                banned_dict.pop(nick)
+                bannedDb.pop(nick)
 
     nunban = wrap(nunban, ['something'])
 
