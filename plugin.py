@@ -28,7 +28,7 @@
 
 ###
 
-from supybot import utils, plugins, ircutils, callbacks, irclib, ircmsgs, conf
+from supybot import utils, plugins, ircutils, callbacks, irclib, ircmsgs, conf, world, log
 from supybot.commands import *
 try:
     from supybot.i18n import PluginInternationalization
