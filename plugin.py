@@ -79,7 +79,6 @@ class Oraserv(callbacks.Plugin):
     @wrap([getopts({'duration': 'something'}), 'nick', optional('something')])
     def nban(self, irc, msg, args, opts, nick, reason):
         """[--duration <duration>] <nick> [<reason>]
-
         will add a KLINE for the host associated with <nick> and also KILL the connection.
         If <nick> is registered it will suspend the respective account
         <duration> is of the format '1y 12mo 31d 10h 8m 13s'
@@ -140,7 +139,6 @@ class Oraserv(callbacks.Plugin):
 
     def nunban(self, irc, msg, args, nick):
         """<nick>
-
         If found, will unban mask/account associated with <nick>
         """
         label = ircutils.makeLabel()
@@ -166,4 +164,3 @@ Class = Oraserv
 
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
-
