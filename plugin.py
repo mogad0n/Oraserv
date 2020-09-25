@@ -163,14 +163,14 @@ class Oraserv(callbacks.Plugin):
 
     nunban = wrap(nunban, ['something'])
 
-    @wrap(['channel', 'text', many('nick')])
+    @wrap(['channel', 'something', many('nick')])
     def automode(self, irc, msg, args, mode, nicks):
         """[<channel>] <mode> <nick> [<nick>....]
 
         set's amode <mode> on given <nick>/<nicks> for <channel>
-        The nick/nicks must be registered and <mode> must be voice, halfop or op
+        The nick/nicks must be registered and <mode> must be (de)voice, (de)halfop or (de)op
         """
-        label = ircutils.makeLabel()
+        # label = ircutils.makeLabel()
 
         if mode == 'voice':
             flag = '+v'
@@ -178,14 +178,20 @@ class Oraserv(callbacks.Plugin):
             flag = '+h'
         elif mode == 'op':
             flag = '+o'
+        elif mode == 'devoice':
+            flag = '-v'
+        elif mode == 'dehalfop':
+            flag = '-h'
+        elif mode == 'deop':
+            flag = '-o'
         else:
             irc.error(f'Supplied mode {mode} is not allowed/valid')
             return
 
         for nick in nicks:
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='PRIVMSG',
-                            args=('chanserv', f'amode {channel} {flag} {nick}'), server_tags={"label": label}))
-        irc.replySuccess(f'Setting mode {flag} on given nicks, if a nick wasn\'t given {flag} it is unregistered')
+                            args=('chanserv', f'amode {channel} {flag} {nick}')))
+        irc.replySuccess(f'Setting mode {flag} on given nick(s), if a nick(s) wasn\'t given {flag} it is unregistered')
 
 
 
