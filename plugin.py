@@ -46,6 +46,8 @@ filename = conf.supybot.directories.data.dirize("Oraserv.db")
 class Oraserv(callbacks.Plugin):
     """Suite of tools to interact with oragonoIRCd"""
 
+    _whois = {}
+
     def __init__(self, irc):
         self.__parent = super(Oraserv, self)
         self.__parent.__init__(irc)
@@ -160,6 +162,31 @@ class Oraserv(callbacks.Plugin):
                 self.db.pop(nick)
 
     nunban = wrap(nunban, ['something'])
+
+    @wrap(['channel', 'text', many('nick')])
+    def automode(self, irc, msg, args, mode, nicks):
+        """[<channel>] <mode> <nick> [<nick>....]
+
+        set's amode <mode> on given <nick>/<nicks> for <channel>
+        The nick/nicks must be registered and <mode> must be voice, halfop or op
+        """
+        label = ircutils.makeLabel()
+
+        if mode == 'voice':
+            flag = '+v'
+        elif mode == 'halfop':
+            flag = '+h'
+        elif mode == 'op':
+            flag = '+o'
+        else:
+            irc.error(f'Supplied mode {mode} is not allowed/valid')
+            return
+
+        for nick in nicks:
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='PRIVMSG',
+                            args=('chanserv', f'amode {channel} {flag} {nick}'), server_tags={"label": label}))
+        irc.replySuccess(f'Setting mode {flag} on given nicks, if a nick wasn\'t given {flag} it is unregistered')
+
 
 
 Class = Oraserv
