@@ -164,7 +164,7 @@ class Oraserv(callbacks.Plugin):
     nunban = wrap(nunban, ['something'])
 
     @wrap(['channel', 'something', many('nick')])
-    def automode(self, irc, msg, args, mode, nicks):
+    def automode(self, irc, msg, args, channel, mode, nicks):
         """[<channel>] <mode> <nick> [<nick>....]
 
         set's amode <mode> on given <nick>/<nicks> for <channel>
@@ -191,7 +191,7 @@ class Oraserv(callbacks.Plugin):
         for nick in nicks:
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='PRIVMSG',
                             args=('chanserv', f'amode {channel} {flag} {nick}')))
-        irc.replySuccess(f'Setting mode {flag} on given nick(s), if a nick(s) wasn\'t given {flag} it is unregistered')
+        irc.replySuccess(f'Setting mode {flag} on given nick(s), if nick(s) weren\'t given the {flag} mode it/they are unregistered')
 
 
 
