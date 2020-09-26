@@ -199,13 +199,13 @@ class Oraserv(callbacks.Plugin):
         making a note of the <reason>.
         <channel> is only necessary if the message is not sent on the channel itself
         """
-        arg = 'PURGE'
+        arg = ['PURGE']
         arg.append(channel)
         if reason:
             arg.append(reason)
         irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
                             args=arg))
-        irc.replySuccess(f'Purging channel {channel} {reason or ''}')
+        irc.replySuccess(f'Purging channel {channel} {reason or ""}')
 
     @wrap(['validChannel'])
     def chanunpurge(self, irc, msg, args, channel):
@@ -213,7 +213,7 @@ class Oraserv(callbacks.Plugin):
 
         unpurges the given <channel> and restores it's status on the ircd
         """
-        arg = 'UNPURGE'
+        arg = ['UNPURGE']
         arg.append(channel)
         irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
                             args=arg))
