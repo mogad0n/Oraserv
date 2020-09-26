@@ -81,6 +81,7 @@ class Oraserv(callbacks.Plugin):
     @wrap([getopts({'duration': 'something'}), 'nick', optional('something')])
     def nban(self, irc, msg, args, opts, nick, reason):
         """[--duration <duration>] <nick> [<reason>]
+
         will add a KLINE for the host associated with <nick> and also KILL the connection.
         If <nick> is registered it will suspend the respective account
         <duration> is of the format '1y 12mo 31d 10h 8m 13s'
@@ -191,6 +192,19 @@ class Oraserv(callbacks.Plugin):
                             args=('chanserv', f'amode {channel} {flag} {nick}')))
         irc.replySuccess(f'Setting mode {flag} on given nick(s), if nick(s) weren\'t given the {flag} mode it/they are unregistered')
 
+    @wrap([many('channel')])
+    def chanreg(self, irc, msgs, args, channels):
+        """[<channel>].. [<channel>..]
+
+        Registered the given channel/s by the bot
+        """
+        arg = ['regiter']
+        for channel in channels:
+            arg.append(channel)
+            irc.queueMsg(msg=ircmsmgs.IrcMsg(command='CS', args=arg))
+
+
+
     @wrap(['channel', 'something'])
     def chanpurge(self, irc, msg, args, channel, reason):
         """[<channel>] <reason>
@@ -204,7 +218,7 @@ class Oraserv(callbacks.Plugin):
         if reason:
             arg.append(reason)
         irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
-                            args=arg))
+                            args=arg))D
         irc.replySuccess(f'Purging channel {channel} {reason or ""}')
 
     @wrap(['validChannel'])
