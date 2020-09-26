@@ -230,6 +230,26 @@ class Oraserv(callbacks.Plugin):
                             args=arg))
         irc.reply(f'Attempting forced nick change for {current}')
 
+    @wrap(['channel',('literal', ('users', 'access'))])
+    def chanreset(self, irc, msg, args, channel, target):
+        """[<channel>] <target>
+
+        <target> can either be 'users' (kicks all users except the bot)
+        or 'access' (resets all stored bans, invites, ban exceptions,
+        and persistent user-mode grants) for <channel>.
+        <channel> is only necessary if the message is not sent on the channel itself
+        """
+        arg = ['CLEAR']
+        arg.append(channel)
+        arg.append(target)
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
+                            args=arg))
+        if target == 'users':
+            irc.reply(f'Kicking all users out of {channel} besides me')
+        else:
+            irc.reply(f'Resetting bans and privileges for {channel}')
+
+
 
 Class = Oraserv
 
