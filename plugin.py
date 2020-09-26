@@ -191,6 +191,44 @@ class Oraserv(callbacks.Plugin):
                             args=('chanserv', f'amode {channel} {flag} {nick}')))
         irc.replySuccess(f'Setting mode {flag} on given nick(s), if nick(s) weren\'t given the {flag} mode it/they are unregistered')
 
+    @wrap(['channel', 'something'])
+    def chanpurge(self, irc, msg, args, channel, reason):
+        """[<channel>] <reason>
+
+        Purges the given <channel> and blacklists it on the ircd
+        making a note of the <reason>.
+        <channel> is only necessary if the message is not sent on the channel itself
+        """
+        arg = 'PURGE'
+        arg.append(channel)
+        if reason:
+            arg.append(reason)
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
+                            args=arg))
+        irc.replySuccess(f'Purging channel {channel} {reason or ''}')
+
+    @wrap(['validChannel'])
+    def chanunpurge(self, irc, msg, args, channel):
+        """<channel>
+
+        unpurges the given <channel> and restores it's status on the ircd
+        """
+        arg = 'UNPURGE'
+        arg.append(channel)
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
+                            args=arg))
+        irc.replySuccess(f'Restoring channel {channel} to an unpurged state')
+
+    @wrap(['nick', 'something'])
+    def sanick(self, irc, msg, args, current, new):
+        """<current><new>
+
+        Issues a SANICK command and forcibly changes the <current> nick to the <new> nick
+        """
+        arg = [current, new]
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='SANICK',
+                            args=arg))
+        irc.reply(f'Attempting forced nick change for {current}')
 
 
 Class = Oraserv
