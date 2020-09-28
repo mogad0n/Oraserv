@@ -95,7 +95,7 @@ class Oraserv(callbacks.Plugin):
         try:
             (nick, ident, host) = ircutils.splitHostmask(irc.state.nickToHostmask(nick))
             bannable_host = '*!*@' + host
-            bannable_ih = f'*!{ident}@{host}
+            bannable_ih = f'*!{ident}@{host}'
         except KeyError:
             irc.error(
                 "No such nick",
