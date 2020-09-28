@@ -212,7 +212,7 @@ class Oraserv(callbacks.Plugin):
         for channel in channels:
             arg = ['register']
             arg.append(channel)
-            irc.queueMsg(msg=ircmsmgs.IrcMsg(command='CS', args=arg))
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS', args=arg))
         irc.reply('Registered the channel(s) successfully')
 
 
