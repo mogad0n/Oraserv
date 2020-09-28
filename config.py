@@ -53,4 +53,6 @@ Oraserv = conf.registerPlugin('Oraserv')
 #     registry.Boolean(False, _("""Help for someConfigVariableName.""")))
 
 
+conf.registerGlobalValue(discordhosts, '')
+
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

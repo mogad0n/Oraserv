@@ -93,11 +93,9 @@ class Oraserv(callbacks.Plugin):
 
         label = ircutils.makeLabel()
         try:
-            hostmask = irc.state.nickToHostmask(nick)
-            host = hostmask.split("@")[1]
-            bannable_host = f'*!*@{host}'
-            ih = hostmask.split("!")[1]
-            bannable_ih = f'*!{ih}'
+            (nick, ident, host) = ircutils.splitHostmask(irc.state.nickToHostmask(nick))
+            bannable_host = '*!*@' + host
+            bannable_ih = f'*!{ident}@{host}
         except KeyError:
             irc.error(
                 "No such nick",
@@ -162,6 +160,18 @@ class Oraserv(callbacks.Plugin):
 
     nunban = wrap(nunban, ['something'])
 
+    def nbanlist(self, irc, msg, args):
+        """This command takes no arguments
+
+        Displays a list of masks/accounts banned or suspended respectively
+        Currently only lists masks/accounts and not expiry and reason. Can be heavy use wisely
+        """
+        for nick in self.db:
+            arg = self.db[nick]
+            irc.reply(f'{nick}  denied as {arg}')
+    nbanlist = wrap(nbanlist)
+
+
     @wrap(['channel', 'something', many('nick')])
     def automode(self, irc, msg, args, channel, mode, nicks):
         """[<channel>] <mode> <nick> [<nick>....]
@@ -198,7 +208,7 @@ class Oraserv(callbacks.Plugin):
 
         Registered the given channel/s by the bot
         """
-        arg = ['regiter']
+        arg = ['register']
         for channel in channels:
             arg.append(channel)
             irc.queueMsg(msg=ircmsmgs.IrcMsg(command='CS', args=arg))
@@ -218,7 +228,7 @@ class Oraserv(callbacks.Plugin):
         if reason:
             arg.append(reason)
         irc.queueMsg(msg=ircmsgs.IrcMsg(command='CS',
-                            args=arg))D
+                            args=arg))
         irc.replySuccess(f'Purging channel {channel} {reason or ""}')
 
     @wrap(['validChannel'])
