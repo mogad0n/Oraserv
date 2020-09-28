@@ -203,15 +203,17 @@ class Oraserv(callbacks.Plugin):
         irc.replySuccess(f'Setting mode {flag} on given nick(s), if nick(s) weren\'t given the {flag} mode it/they are unregistered')
 
     @wrap([many('channel')])
-    def chanreg(self, irc, msgs, args, channels):
+    def chanreg(self, irc, msg, args, channels):
         """[<channel>].. [<channel>..]
 
         Registered the given channel/s by the bot
         """
-        arg = ['register']
+
         for channel in channels:
+            arg = ['register']
             arg.append(channel)
             irc.queueMsg(msg=ircmsmgs.IrcMsg(command='CS', args=arg))
+        irc.reply('Registered the channel(s) successfully')
 
 
 
