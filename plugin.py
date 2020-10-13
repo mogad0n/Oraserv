@@ -78,6 +78,79 @@ class Oraserv(callbacks.Plugin):
         world.flushers.remove(self._flushDb)
         self.__parent.die()
 
+    ###
+    # Oper commands
+    ###
+
+    @wrap(['nick', optional('something')])
+    def kill(self, irc, msg, args, nick, reason):
+        """<nick> [<reason>]
+
+        Issues a KILL command on the <nick> with <reason> if provided.
+        """
+        arg = [nick]
+        if reason:
+            arg.append(reason)
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='KILL',
+                    args=arg))
+        irc.replySuccess(f'Killed connection for {nick}')
+
+
+
+    @wrap(['validChannel', 'something', optional('something')])
+    def renamechan(self, irc, msg, args, channel, newname, reason):
+        """<channel> <newname> [<reason>]
+
+        Renames the given <channel> with the given <reason>, if provided.
+        <newname> must begin with a '#'
+        """
+        if newname[0] != '#':
+            irc.error('Invalid channel name')
+        else:
+            arg = [channel, newname]
+            if reason:
+                arg.append(reason)
+            irc.queueMsg(msg=ircmsgs.IrcMsg(command='RENAME',
+                            args=arg))
+            irc.replySuccess(f'Renaming {channel} to {newname}')
+
+
+
+    @wrap([getopts({'nick': 'nick'}), many('validChannel')])
+    def sajoin(self, irc, msg, args, opts. channel):
+        """[--nick <nick>] <channel> .. [<channel>]
+
+        Forcibly joins a user to a channel, ignoring restrictions like bans, user limits
+        and channel keys. If <nick> is omitted, it defaults to the bot itself.
+        """
+        opts = dict(opts)
+        arg = []
+        if 'nick' in opts:
+            arg = [opts['nick']]
+        for chans in channel:
+            arg.append[channel]
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='SAJOIN',
+                            args=arg))
+        if 'nick' in opts:
+            re = f'attempting to force join {opts} to {channel}'
+        else:
+            re = f'I am attempting to forcibly join {channel}'
+        irc.reply(re)
+
+
+    @wrap(['nick', 'something'])
+    def sanick(self, irc, msg, args, current, new):
+        """<current><new>
+
+        Issues a SANICK command and forcibly changes the <current> nick to the <new> nick
+        """
+        arg = [current, new]
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='SANICK',
+                            args=arg))
+        irc.reply(f'Attempting forced nick change for {current}')
+
+
+
     @wrap([getopts({'duration': 'something'}), 'nick', optional('something')])
     def nban(self, irc, msg, args, opts, nick, reason):
         """[--duration <duration>] <nick> [<reason>]
@@ -171,7 +244,9 @@ class Oraserv(callbacks.Plugin):
             irc.reply(f'{nick}  denied as {arg}')
     nbanlist = wrap(nbanlist)
 
-
+    ###
+    # Chanserv commands
+    ###
     @wrap(['channel', 'something', many('nick')])
     def automode(self, irc, msg, args, channel, mode, nicks):
         """[<channel>] <mode> <nick> [<nick>....]
@@ -245,16 +320,6 @@ class Oraserv(callbacks.Plugin):
                             args=arg))
         irc.replySuccess(f'Restoring channel {channel} to an unpurged state')
 
-    @wrap(['nick', 'something'])
-    def sanick(self, irc, msg, args, current, new):
-        """<current><new>
-
-        Issues a SANICK command and forcibly changes the <current> nick to the <new> nick
-        """
-        arg = [current, new]
-        irc.queueMsg(msg=ircmsgs.IrcMsg(command='SANICK',
-                            args=arg))
-        irc.reply(f'Attempting forced nick change for {current}')
 
     @wrap(['channel',('literal', ('users', 'access'))])
     def chanreset(self, irc, msg, args, channel, target):
@@ -274,6 +339,22 @@ class Oraserv(callbacks.Plugin):
             irc.reply(f'Kicking all users out of {channel} besides me')
         else:
             irc.reply(f'Resetting bans and privileges for {channel}')
+    @wrap(['channel'])
+
+    ###
+    # Hostserv commands
+    ###
+
+    @wrap(['nick', 'something'])
+    def setvhost(self, irc, msg, args, nick, vhost):
+        """<nick> <vhost>
+
+        sets a <nick>'s vhost, bypassing the request system.
+        """
+        arg = ['SET', nick, vhost]
+        irc.queueMsg(msg=ircmsgs.IrcMsg(command='HS',
+                    args=arg))
+        irc.replySuccess(f'Killed connection for {nick}')
 
 
 
