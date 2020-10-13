@@ -117,7 +117,7 @@ class Oraserv(callbacks.Plugin):
 
 
     @wrap([getopts({'nick': 'nick'}), many('validChannel')])
-    def sajoin(self, irc, msg, args, opts. channel):
+    def sajoin(self, irc, msg, args, opts, channel):
         """[--nick <nick>] <channel> .. [<channel>]
 
         Forcibly joins a user to a channel, ignoring restrictions like bans, user limits
@@ -270,7 +270,6 @@ class Oraserv(callbacks.Plugin):
             flag = '-o'
         else:
             irc.error(f'Supplied mode {mode} is not allowed/valid')
-            return
 
         for nick in nicks:
             irc.queueMsg(msg=ircmsgs.IrcMsg(command='PRIVMSG',
